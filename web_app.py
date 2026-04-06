@@ -18,9 +18,11 @@ from core.budget_manager import check_budget_status, get_savings_report
 from core.chat_history import get_recent_history
 from database.db import initialize_db, get_usage_history
 
-# 🔥 IMPORTANT: static config FIXED
+# 🔥 STATIC CONFIG
 app = Flask(__name__, static_folder='web_frontend/dist', static_url_path='')
-app.secret_key = "super_secret_key_123456"
+
+# 🔐 SECRET KEY (SAFE)
+app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_123")
 
 assistant = Assistant()
 initialize_db()
@@ -38,8 +40,6 @@ def login():
     if request.method == 'POST':
         username = request.form.get("username")
         password = request.form.get("password")
-
-        print("DEBUG:", username, password)
 
         if username in users and users[username] == password:
             session["user"] = username
@@ -73,7 +73,7 @@ def home():
     return send_from_directory('web_frontend/dist', 'index.html')
 
 # =========================
-# 🔥 ASSETS FIX (VERY IMPORTANT)
+# 🔥 STATIC + ASSETS FIX
 # =========================
 
 @app.route('/assets/<path:filename>')
@@ -85,11 +85,15 @@ def serve_static(path):
     return send_from_directory('web_frontend/dist', path)
 
 # =========================
-# 🔒 API
+# 🔒 AUTH CHECK
 # =========================
 
 def check_auth():
     return "user" in session
+
+# =========================
+# 🔒 API
+# =========================
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -140,9 +144,10 @@ def clear():
     return jsonify({'message': result})
 
 # =========================
-# ▶ RUN
+# ▶ RUN (DEPLOY FIXED)
 # =========================
 
 if __name__ == '__main__':
-    logger.info("🌐 http://127.0.0.1:8080")
-    app.run(debug=False, port=8080, host='0.0.0.0')
+    port = int(os.environ.get("PORT", 8080))  # 🔥 IMPORTANT
+    logger.info(f"🌐 Running on port {port}")
+    app.run(debug=False, host='0.0.0.0', port=port)
