@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Token Budget Manager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3f;
+    --accent: #7c6af7;
+    --accent2: #4ecca3;
+    --text: #e8e8f0;
+    --text2: #8888aa;
+    --danger: #ff6b6b;
+    --warning: #ffd93d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .token-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  .clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Main Layout */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Chat Area */
+  .chat-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .avatar.ai {
+    background: linear-gradient(135deg, var(--accent), #5544dd);
+  }
+
+  .avatar.user {
+    background: linear-gradient(135deg, var(--accent2), #2a9d7a);
+  }
+
+  .bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .message.ai .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+
+  .message.user .bubble {
+    background: linear-gradient(135deg, var(--accent), #5544dd);
+    border-top-right-radius: 4px;
+  }
+
+  .msg-meta {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .message.user .msg-meta { text-align: right; }
+
+  .thinking {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  .dot-anim span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s infinite;
+  }
+
+  .dot-anim span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-anim span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Input Area */
+  .input-area {
+    padding: 16px 24px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+  }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #5544dd);
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(124, 106, 247, 0.4);
+  }
+
+  .send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 280px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .stat-card h4 {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .stat-row .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  .history-item:last-child { border-bottom: none; }
+  .history-item .tokens { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+
+  .refresh-btn {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .welcome-msg {
+    text-align: center;
+    color: var(--text2);
+    padding: 60px 20px;
+  }
+
+  .welcome-msg .icon { font-size: 48px; margin-bottom: 16px; }
+  .welcome-msg h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+  .welcome-msg p { font-size: 13px; line-height: 1.6; }
+
+  .alert-bar {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--danger);
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="status-dot"></div>
+    <span>Dev Token Budget Manager</span>
+  </div>
+  <div class="header-right">
+    <div class="token-badge" id="tokenBadge">0 tokens</div>
+    <button class="clear-btn" onclick="clearChat()">🗑 Clear</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="chat-section">
+    <div class="messages" id="messages">
+      <div class="welcome-msg">
+        <div class="icon">🤖</div>
+        <h3>Namaste! Main hun tera AI Assistant</h3>
+        <p>Kuch bhi poocho — main token-efficient jawab dunga!<br>
+        Free mein chal raha hun Groq ke saath 🚀</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea id="userInput" placeholder="Kuch bhi poocho..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-title">📊 Stats</div>
+
+    <div class="alert-bar" id="alertBar"></div>
+
+    <div class="stat-card">
+      <h4>Aaj Ka Usage</h4>
+      <div class="stat-row">
+        <span>Input Tokens</span>
+        <span class="val" id="todayInput">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Output Tokens</span>
+        <span class="val" id="todayOutput">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Total Tokens</span>
+        <span class="val" id="todayTotal">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Requests</span>
+        <span class="val" id="todayReq">0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="dailyProgress" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h4>Is Mahine Ka Usage</h4>
+      <div class="stat-row">
+        <span>Total Tokens</span>
+        <span class="val" id="monthTotal">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Requests</span>
+        <span class="val" id="monthReq">0</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h4>💰 Savings Report</h4>
+      <div class="stat-row">
+        <span>Tokens Bachaye</span>
+        <span class="val" id="tokensSaved">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Efficiency</span>
+        <span class="val" id="efficiency">0%</span>
+      </div>
+    </div>
+
+    <div class="sidebar-title">📅 History</div>
+    <div class="stat-card" id="historyList">
+      <div style="color:var(--text2);font-size:12px">Loading...</div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadStats()">🔄 Refresh Stats</button>
+  </div>
+</div>
+
+<script>
+  let totalSessionTokens = 0;
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    autoResize(input);
+    document.getElementById('sendBtn').disabled = true;
+
+    addMessage('user', msg);
+    const thinkingId = addThinking();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+
+      const data = await res.json();
+      removeThinking(thinkingId);
+
+      const tokens = data.stats ? data.stats.total_tokens : 0;
+      totalSessionTokens += tokens;
+      document.getElementById('tokenBadge').textContent = totalSessionTokens + ' tokens';
+
+      addMessage('ai', data.response, data.model, tokens);
+
+      if (data.alert) {
+        const alertBar = document.getElementById('alertBar');
+        alertBar.textContent = data.alert;
+        alertBar.style.display = 'block';
+      }
+
+      loadStats();
+
+    } catch (err) {
+      removeThinking(thinkingId);
+      addMessage('ai', '❌ Server se connect nahi ho pa raha. web_app.py chal raha hai?');
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+
+  function addMessage(role, text, model='', tokens=0) {
+    const msgs = document.getElementById('messages');
+    const welcome = msgs.querySelector('.welcome-msg');
+    if (welcome) welcome.remove();
+
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+
+    const meta = role === 'ai' && tokens > 0
+      ? `<div class="msg-meta">${model} • ${tokens} tokens</div>`
+      : '';
+
+    div.innerHTML = `
+      <div class="avatar ${role}">${role === 'ai' ? '🤖' : '👤'}</div>
+      <div>
+        <div class="bubble">${text}</div>
+        ${meta}
+      </div>
+    `;
+
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function addThinking() {
+    const msgs = document.getElementById('messages');
+    const id = 'think_' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'thinking';
+    div.innerHTML = `
+      <div class="dot-anim">
+        <span></span><span></span><span></span>
+      </div>
+      Soch raha hun...
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+
+  function removeThinking(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  async function clearChat() {
+    await fetch('/api/clear', { method: 'POST' });
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = `
+      <div class="welcome-msg">
+        <div class="icon">🤖</div>
+        <h3>Chat clear ho gaya!</h3>
+        <p>Naya conversation shuru karo 🚀</p>
+      </div>`;
+    totalSessionTokens = 0;
+    document.getElementById('tokenBadge').textContent = '0 tokens';
+    document.getElementById('alertBar').style.display = 'none';
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/stats');
+      const data = await res.json();
+
+      document.getElementById('todayInput').textContent = data.today.total_input || 0;
+      document.getElementById('todayOutput').textContent = data.today.total_output || 0;
+      document.getElementById('todayTotal').textContent = data.today.total_tokens || 0;
+      document.getElementById('todayReq').textContent = data.today.request_count || 0;
+      document.getElementById('monthTotal').textContent = data.monthly.total_tokens || 0;
+      document.getElementById('monthReq').textContent = data.monthly.request_count || 0;
+      document.getElementById('tokensSaved').textContent = data.savings.tokens_saved || 0;
+      document.getElementById('efficiency').textContent = (data.savings.efficiency_percent || 0) + '%';
+
+      const pct = Math.min(100, ((data.today.request_count || 0) / 1500) * 100);
+      document.getElementById('dailyProgress').style.width = pct + '%';
+
+      const historyEl = document.getElementById('historyList');
+      if (data.history && data.history.length > 0) {
+        historyEl.innerHTML = data.history.map(h => `
+          <div class="history-item">
+            <span>${h.date}</span>
+            <span class="tokens">${h.total_tokens} tok</span>
+          </div>
+        `).join('');
+      } else {
+        historyEl.innerHTML = '<div style="color:var(--text2);font-size:12px">Abhi koi history nahi</div>';
+      }
+    } catch (e) {}
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  loadStats();
+  setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
