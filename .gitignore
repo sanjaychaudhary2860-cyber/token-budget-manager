@@ -1,0 +1,27 @@
+# 🔐 Secrets
+.env
+*.env
+
+# 🧠 AI memory / user data
+*.json
+chat_history.json
+memory.json
+
+# 🗄 Database
+*.db
+
+# 📦 Virtual environment
+venv/
+
+# 🧾 Logs / backups
+logs/
+backups/
+*.log
+
+# ⚙️ Python cache
+__pycache__/
+*.pyc
+
+# 🧱 System files
+.DS_Store
+Thumbs.db
