@@ -1,22 +1,29 @@
-@echo off
-title Dev Token Budget Manager
+# 🔐 Secrets
+.env
+*.env
 
-cd /d %~dp0
+# 🧠 AI memory / user data (specific only)
+chat_history.json
+memory.json
 
-if not exist main.py (
-    echo main.py not found!
-    pause
-    exit
-)
+# 🗄 Database
+*.db
 
-if exist venv (
-    call venv\Scripts\activate
-) else (
-    echo Warning: venv not found
-)
+# 📦 Virtual environment
+venv/
 
-cls
-echo Starting app...
-python main.py
+# 📦 Node modules (frontend)
+node_modules/
 
-pause
+# 🧾 Logs / backups
+logs/
+backups/
+*.log
+
+# ⚙️ Python cache
+__pycache__/
+*.pyc
+
+# 🧱 System files
+.DS_Store
+Thumbs.db
