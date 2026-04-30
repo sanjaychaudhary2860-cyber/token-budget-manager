@@ -27,6 +27,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_123")
 assistant = Assistant()
 initialize_db()
 
+print("NEW VERSION RUNNING")
 # =========================
 # 🔐 LOGIN SYSTEM
 # =========================
