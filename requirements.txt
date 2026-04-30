@@ -1,3 +1,5 @@
+flask
+gunicorn
 google-generativeai>=0.5.0
 groq>=0.5.0
 rich>=13.0.0
@@ -6,5 +8,3 @@ tiktoken>=0.6.0
 requests>=2.31.0
 colorama>=0.4.6
 anthropic
-SpeechRecognition
-gunicorn
